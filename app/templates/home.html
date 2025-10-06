@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-11">
+            <!-- Header Section -->
+            <div class="text-center mb-5">                
+                <h1 class="display-3 fw-bold text-dark mb-3" style="text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);">ProcOCR</h1>
+                <p class="lead text-dark fs-4 mx-auto" style="max-width: 600px; text-shadow: 0 1px 3px rgba(255, 255, 255, 0.2);">
+                    Transform images into editable text using advanced OCR technology
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <!-- File Upload Section -->
+                <div class="col-lg-6">
+                    <div class="card floating-card glass-effect border-0 h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="p-2 rounded-3 me-3" style="background: #087990; box-shadow: 0 4px 15px rgba(8, 121, 144, 0.3);">
+                                    <i class="bi bi-cloud-upload text-white fs-5"></i>
+                                </div>
+                                <h4 class="card-title text-dark mb-0 fw-600">Upload Image</h4>
+                            </div>
+                            
+                            <form id="ocrForm" enctype="multipart/form-data">
+                                <!-- Drag & Drop Area -->
+                                <div class="file-upload-area rounded-4 p-5 text-center mb-4" id="dropZone">
+                                    <div class="mb-3">
+                                        <i class="bi bi-image text-secondary display-4"></i>
+                                    </div>
+                                    <h6 class="text-dark mb-2">Drag & Drop your image here</h6>
+                                    <p class="text-secondary small mb-3">or click to browse files</p>
+                                    <input type="file" class="form-control d-none" id="imageFile" name="file" 
+                                           accept=".png,.jpg,.jpeg,image/png,image/jpeg" required>
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('imageFile').click()">
+                                        <i class="bi bi-folder2-open me-2"></i>Browse Files
+                                    </button>
+                                </div>
+                                
+                                <!-- File Info -->
+                                <div id="fileInfo" class="alert alert-info d-none mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-image me-2"></i>
+                                        <span id="fileName" class="fw-medium"></span>
+                                        <button type="button" class="btn-close ms-auto" onclick="clearFile()"></button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Format Info -->
+                                <div class="d-flex flex-wrap gap-2 mb-4">
+                                    <span class="badge bg-light rounded-pill px-3 py-2">
+                                        <i class="bi bi-filetype-png me-1"></i>PNG
+                                    </span>
+                                    <span class="badge bg-light rounded-pill px-3 py-2">
+                                        <i class="bi bi-filetype-jpg me-1"></i>JPG
+                                    </span>
+                                    <span class="badge bg-light rounded-pill px-3 py-2">
+                                        <i class="bi bi-filetype-gif me-1"></i>JPEG
+                                    </span>
+                                    <span class="badge bg-info rounded-pill px-3 py-2">
+                                        <i class="bi bi-hdd me-1"></i>Max 10MB
+                                    </span>
+                                </div>
+                                
+                                <!-- Submit Button -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn gradient-btn btn-lg text-white fw-semibold py-3" id="extractBtn">
+                                        <span id="btnText">
+                                            <i class="bi bi-magic me-2"></i>Extract Text
+                                        </span>
+                                        <span id="spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Results Section -->
+                <div class="col-lg-6">
+                    <div id="resultsSection" class="card floating-card glass-effect border-0 h-100 d-none results-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="p-2 rounded-3 me-3" style="background: #087990; box-shadow: 0 4px 15px rgba(8, 121, 144, 0.3);">
+                                        <i class="bi bi-check-circle text-white fs-5"></i>
+                                    </div>
+                                    <h4 class="card-title text-dark mb-0 fw-600">Extracted Text</h4>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="clearResults()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            
+                            <div id="resultFileName" class="text-secondary small mb-3 d-flex align-items-center">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                <span></span>
+                            </div>
+                            
+                            <!-- Text Output -->
+                            <div class="bg-white rounded-4 p-4 mb-4" style="max-height: 400px; overflow-y: auto;">
+                                <pre id="extractedText" class="mb-0 text-dark" style="white-space: pre-wrap; font-family: 'Inter', sans-serif; line-height: 1.6;"></pre>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-primary flex-fill" onclick="copyToClipboard()">
+                                    <i class="bi bi-clipboard me-2"></i>
+                                    <span id="copyBtnText">Copy Text</span>
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="downloadText()">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="shareText()">
+                                    <i class="bi bi-share"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Text Stats -->
+                            <div class="row g-3 mt-3">
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="text-dark fs-5 fw-bold" id="charCount">0</div>
+                                        <div class="text-secondary small">Characters</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="text-dark fs-5 fw-bold" id="wordCount">0</div>
+                                        <div class="text-secondary small">Words</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="text-dark fs-5 fw-bold" id="lineCount">0</div>
+                                        <div class="text-secondary small">Lines</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error Section -->
+            <div id="errorSection" class="alert border-0 shadow-lg mt-4 d-none" role="alert" style="background: linear-gradient(135deg, #dc3545 0%, #c62828 100%); color: white;">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1 fw-bold">Oops! Something went wrong</h6>
+                        <p id="errorMessage" class="mb-0"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Drag and Drop functionality
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('imageFile');
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+// Highlight drop zone when item is dragged over it
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, unhighlight, false);
+});
+
+// Handle dropped files
+dropZone.addEventListener('drop', handleDrop, false);
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function highlight(e) {
+    dropZone.style.borderColor = '#0dcaf0';
+    dropZone.style.backgroundColor = 'rgba(13, 202, 240, 0.1)';
+    dropZone.style.boxShadow = '0 0 20px rgba(13, 202, 240, 0.3)';
+}
+
+function unhighlight(e) {
+    dropZone.style.borderColor = '#dee2e6';
+    dropZone.style.backgroundColor = 'transparent';
+    dropZone.style.boxShadow = 'none';
+}
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    if (files.length > 0) {
+        fileInput.files = files;
+        showFileInfo(files[0]);
+    }
+}
+
+// File input change handler
+fileInput.addEventListener('change', function(e) {
+    if (e.target.files.length > 0) {
+        showFileInfo(e.target.files[0]);
+    }
+});
+
+function showFileInfo(file) {
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    
+    fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
+    fileInfo.classList.remove('d-none');
+}
+
+function clearFile() {
+    fileInput.value = '';
+    document.getElementById('fileInfo').classList.add('d-none');
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Form submission
+document.getElementById('ocrForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showError('Please select an image file');
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+        showError('Please select a PNG, JPG, or JPEG image file');
+        return;
+    }
+    
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+        showError('File size must be less than 10MB');
+        return;
+    }
+    
+    formData.append('file', file);
+    
+    // Show loading state
+    showLoading(true);
+    hideError();
+    hideResults();
+    
+    try {
+        const response = await fetch('/extract-text/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showResults(result);
+        } else {
+            showError(result.detail || 'An error occurred while processing the image');
+        }
+    } catch (error) {
+        showError('Network error: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
+});
+
+function showLoading(loading) {
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+    const extractBtn = document.getElementById('extractBtn');
+    
+    if (loading) {
+        btnText.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+        spinner.classList.remove('d-none');
+        extractBtn.disabled = true;
+    } else {
+        btnText.innerHTML = '<i class="bi bi-magic me-2"></i>Extract Text';
+        spinner.classList.add('d-none');
+        extractBtn.disabled = false;
+    }
+}
+
+function showResults(result) {
+    const resultsSection = document.getElementById('resultsSection');
+    const resultFileName = document.getElementById('resultFileName').querySelector('span');
+    const extractedText = document.getElementById('extractedText');
+    
+    resultFileName.textContent = result.filename;
+    extractedText.textContent = result.extracted_text || 'No text found in the image';
+    
+    // Update text statistics
+    updateTextStats(result.extracted_text || '');
+    
+    resultsSection.classList.remove('d-none');
+    
+    // Smooth scroll to results
+    setTimeout(() => {
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+}
+
+function updateTextStats(text) {
+    const charCount = text.length;
+    const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const lineCount = text.split('\n').length;
+    
+    document.getElementById('charCount').textContent = charCount.toLocaleString();
+    document.getElementById('wordCount').textContent = wordCount.toLocaleString();
+    document.getElementById('lineCount').textContent = lineCount.toLocaleString();
+}
+
+function showError(message) {
+    const errorSection = document.getElementById('errorSection');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    errorMessage.textContent = message;
+    errorSection.classList.remove('d-none');
+    
+    // Auto-hide error after 5 seconds
+    setTimeout(() => {
+        hideError();
+    }, 5000);
+}
+
+function hideError() {
+    document.getElementById('errorSection').classList.add('d-none');
+}
+
+function hideResults() {
+    document.getElementById('resultsSection').classList.add('d-none');
+}
+
+function clearResults() {
+    hideResults();
+    hideError();
+    clearFile();
+}
+
+function copyToClipboard() {
+    const extractedText = document.getElementById('extractedText').textContent;
+    const copyBtnText = document.getElementById('copyBtnText');
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(extractedText).then(() => {
+            // Show success feedback
+            const originalText = copyBtnText.textContent;
+            copyBtnText.innerHTML = '<i class="bi bi-check-lg me-2"></i>Copied!';
+            
+            setTimeout(() => {
+                copyBtnText.innerHTML = '<i class="bi bi-clipboard me-2"></i>' + originalText.replace('Copied!', 'Copy Text');
+            }, 2000);
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = extractedText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        copyBtnText.innerHTML = '<i class="bi bi-check-lg me-2"></i>Copied!';
+        setTimeout(() => {
+            copyBtnText.innerHTML = '<i class="bi bi-clipboard me-2"></i>Copy Text';
+        }, 2000);
+    }
+}
+
+function downloadText() {
+    const extractedText = document.getElementById('extractedText').textContent;
+    const resultFileName = document.getElementById('resultFileName').querySelector('span').textContent;
+    
+    const blob = new Blob([extractedText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `extracted_text_${resultFileName.replace(/\.[^/.]+$/, "")}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function shareText() {
+    const extractedText = document.getElementById('extractedText').textContent;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Extracted Text from ProcOCR',
+            text: extractedText,
+        });
+    } else {
+        // Fallback - copy to clipboard
+        copyToClipboard();
+    }
+}
+
+// Add some interactive animations
+document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-1px)';
+    });
+    
+    btn.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+    });
+});
+</script>
+{% endblock %}

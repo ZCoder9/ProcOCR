@@ -6,18 +6,18 @@ from fastapi.staticfiles import StaticFiles
 import pytesseract
 from PIL import Image
 import io
+import os
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+if os.name == 'nt':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
+# Linux/Docker will use default: /usr/bin/tesseract
 
+# Define paths
 BASE_DIR = pathlib.Path(__file__).parent.parent
 TEMPLATES_DIR = BASE_DIR / "app" / "templates"
-STATIC_DIR = BASE_DIR
 
 app = FastAPI()
-
-# Mount static files
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 

@@ -5,3 +5,6 @@ jinja2
 pytest
 requests
 python-dotenv
+pytesseract
+Pillow
+gunicorn

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: prococr_app
+    expose:
+      - "8000"
+    volumes:
+      - ./app:/app/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - prococr_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: prococr_nginx
+    ports:
+      - "80:80"       # HTTP only
+    volumes:
+      - ./nginx/prococr.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+    networks:
+      - prococr_network
+    restart: unless-stopped
+
+networks:
+  prococr_network:
+    driver: bridge

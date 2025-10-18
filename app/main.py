@@ -7,9 +7,14 @@ import pytesseract
 from PIL import Image
 import io
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 
 if os.name == 'nt':
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    pytesseract.pytesseract.tesseract_cmd = f"{os.getenv('TESSERACT_PATH')}"
 
 # Linux/Docker will use default: /usr/bin/tesseract
 
